@@ -2,6 +2,8 @@ param eusHubVnetName string = 'eus-hub-vnet'
 param eusSpokeVnetName string = 'eus-spoke-vnet'
 param cusHubVnetName string = 'cus-hub-vnet'
 param cusSpokeVnetName string = 'cus-spoke-vnet'
+param baseTime string = utcNow('yyyymmddth')
+
 
 resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: eusHubVnetName
@@ -17,6 +19,9 @@ resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.0.0.0/24'
+          // routeTable:{
+          //   id: resourceId('Microsoft.Network/routeTables','eusafw-rt')
+          // }
         }
       }
       {
@@ -27,6 +32,9 @@ resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
+  // dependsOn:[
+  //   eusafwrt
+  // ]
 }
 
 resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
@@ -43,6 +51,9 @@ resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'Subnet-1'
         properties: {
           addressPrefix: '10.1.0.0/24'
+          // routeTable:{
+          //   id: resourceId('Microsoft.Network/routeTables','eusspoke-rt')
+          // }
         }
       }
       {
@@ -53,6 +64,9 @@ resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
+  // dependsOn:[
+  //   eusspokert
+  // ]
 }
 
 resource eusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
@@ -104,6 +118,9 @@ resource cusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.10.0.0/24'
+          // routeTable:{
+          //   id: resourceId('Microsoft.Network/routeTables','cusafw-rt')
+          // }
         }
       }
       {
@@ -114,6 +131,9 @@ resource cusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
+  // dependsOn:[
+  //   cusafwrt
+  // ]
 }
 
 resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
@@ -130,6 +150,9 @@ resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'Subnet-1'
         properties: {
           addressPrefix: '10.11.0.0/24'
+          // routeTable:{
+          //   id: resourceId('Microsoft.Network/routeTables','cusspoke-rt')
+          // }
         }
       }
       {
@@ -140,6 +163,9 @@ resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
+  // dependsOn:[
+  //   cusspokert
+  // ]
 }
 
 resource cusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
@@ -191,6 +217,10 @@ resource eusHubTocusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
       id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', cusHubVnetName)
     }
   }
+  dependsOn:[
+    eusHubVnet
+    cusHubVnet
+  ]
 }
 
 resource cusHubToeusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
@@ -205,6 +235,10 @@ resource cusHubToeusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
       id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', eusHubVnetName)
     }
   }
+  dependsOn:[
+    eusHubVnet
+    cusHubVnet
+  ]
 }
 
 resource eusafwpip 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
@@ -239,66 +273,6 @@ resource eusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
   name: 'eusafw'
   location: 'eastus'
   properties: {
-    // applicationRuleCollections: [
-    //   {
-    //     name: 'name'
-    //     properties: {
-    //       priority: 'priority'
-    //       action: {
-    //         type: 'Allow'
-    //       }
-    //       rules: [
-    //         {
-    //           name: 'name'
-    //           description: 'description'
-    //           sourceAddresses: [
-    //             'sourceAddress'
-    //           ]
-    //           protocols: [
-    //             {
-    //               protocolType: 'Http'
-    //               port: 80
-    //             }
-    //           ]
-    //           targetFqdns: [
-    //             'www.microsoft.com'
-    //           ]
-    //         }
-    //       ]
-    //     }
-    //   }
-    // ]
-    // natRuleCollections: [
-    //   {
-    //     name: 'name'
-    //     properties: {
-    //       priority: 'priority'
-    //       action: {
-    //         type: 'Dnat'
-    //       }
-    //       rules: [
-    //         {
-    //           name: 'name'
-    //           description: 'description'
-    //           sourceAddresses: [
-    //             'sourceAddress'
-    //           ]
-    //           destinationAddresses: [
-    //             'destinationAddress'
-    //           ]
-    //           destinationPorts: [
-    //             'port'
-    //           ]
-    //           protocols: [
-    //             'TCP'
-    //           ]
-    //           translatedAddress: 'translatedAddress'
-    //           translatedPort: 'translatedPort'
-    //         }
-    //       ]
-    //     }
-    //   }
-    // ]
     networkRuleCollections: [
       {
         name: 'spokehubhubspoke'
@@ -361,6 +335,7 @@ resource eusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
   }
   dependsOn:[
     eusafwpip
+    eusHubVnet
   ]
 }
 
@@ -369,66 +344,7 @@ resource cusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
   name: 'cusafw'
   location: 'centralus'
   properties: {
-    // applicationRuleCollections: [
-    //   {
-    //     name: 'name'
-    //     properties: {
-    //       priority: 'priority'
-    //       action: {
-    //         type: 'Allow'
-    //       }
-    //       rules: [
-    //         {
-    //           name: 'name'
-    //           description: 'description'
-    //           sourceAddresses: [
-    //             'sourceAddress'
-    //           ]
-    //           protocols: [
-    //             {
-    //               protocolType: 'Http'
-    //               port: 80
-    //             }
-    //           ]
-    //           targetFqdns: [
-    //             'www.microsoft.com'
-    //           ]
-    //         }
-    //       ]
-    //     }
-    //   }
-    // ]
-    // natRuleCollections: [
-    //   {
-    //     name: 'name'
-    //     properties: {
-    //       priority: 'priority'
-    //       action: {
-    //         type: 'Dnat'
-    //       }
-    //       rules: [
-    //         {
-    //           name: 'name'
-    //           description: 'description'
-    //           sourceAddresses: [
-    //             'sourceAddress'
-    //           ]
-    //           destinationAddresses: [
-    //             'destinationAddress'
-    //           ]
-    //           destinationPorts: [
-    //             'port'
-    //           ]
-    //           protocols: [
-    //             'TCP'
-    //           ]
-    //           translatedAddress: 'translatedAddress'
-    //           translatedPort: 'translatedPort'
-    //         }
-    //       ]
-    //     }
-    //   }
-    // ]
+    
     networkRuleCollections: [
       {
         name: 'spokehubhubspoke'
@@ -491,11 +407,12 @@ resource cusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
   }
   dependsOn:[
     cusafwpip
+    cusHubVnet
   ]
 }
 
 resource eusafwrt 'Microsoft.Network/routeTables@2019-11-01' = {
-  name: 'eusafwrt'
+  name: 'eusafw-rt'
   location: 'eastus'
   properties: {
     routes: [
@@ -504,7 +421,7 @@ resource eusafwrt 'Microsoft.Network/routeTables@2019-11-01' = {
         properties: {
           addressPrefix: '0.0.0.0/0'
           nextHopType: 'Internet'
-          // nextHopIpAddress: 'nextHopIp'
+          // nextHopIpAddress: ''
         }
       }
       {
@@ -512,10 +429,207 @@ resource eusafwrt 'Microsoft.Network/routeTables@2019-11-01' = {
         properties: {
           addressPrefix: '10.11.0.0/16'
           nextHopType: 'VirtualAppliance'
-          nextHopIpAddress: 'nextHopIp'
+          nextHopIpAddress: cusafw.properties.ipConfigurations[0].properties.privateIPAddress
         }
       }
     ]
     disableBgpRoutePropagation: true
   }
 }
+
+resource cusafwrt 'Microsoft.Network/routeTables@2019-11-01' = {
+  name: 'cusafw-rt'
+  location: 'centralus'
+  properties: {
+    routes: [
+      {
+        name: 'Internet'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'Internet'
+          // nextHopIpAddress: ''
+        }
+      }
+      {
+        name: 'eusSpoke'
+        properties: {
+          addressPrefix: '10.1.0.0/16'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: eusafw.properties.ipConfigurations[0].properties.privateIPAddress
+        }
+      }
+    ]
+    disableBgpRoutePropagation: true
+  }
+}
+
+// from east us vm to Azure Firewall
+resource eusspokert 'Microsoft.Network/routeTables@2019-11-01' = {
+  name: 'eusspoke-rt'
+  location: 'eastus'
+  properties: {
+    routes: [
+      {
+        name: 'default-rt'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: eusafw.properties.ipConfigurations[0].properties.privateIPAddress
+        }
+      }
+    ]
+    disableBgpRoutePropagation: true
+  }
+}
+
+// from central us vm to Azure Firewall
+resource cusspokert 'Microsoft.Network/routeTables@2019-11-01' = {
+  name: 'cusspoke-rt'
+  location: 'centralus'
+  properties: {
+    routes: [
+      {
+        name: 'default-rt'
+        properties: {
+          addressPrefix: '0.0.0.0/0'
+          nextHopType: 'VirtualAppliance'
+          nextHopIpAddress: cusafw.properties.ipConfigurations[0].properties.privateIPAddress
+        }
+      }
+    ]
+    disableBgpRoutePropagation: true
+  }
+}
+
+resource eusvm1nic 'Microsoft.Network/networkInterfaces@2020-11-01' = {
+  name: 'eusvm1nic'
+  location: 'eastus'
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', eusSpokeVnetName, 'Subnet-1')
+          }
+        }
+      }
+    ]
+  }
+  dependsOn:[
+    eusSpokeVnet
+  ]
+}
+
+resource cusvm1nic 'Microsoft.Network/networkInterfaces@2020-11-01' = {
+  name: 'cusvm1nic'
+  location: 'centralus'
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Dynamic'
+          subnet: {
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', cusSpokeVnetName, 'Subnet-1')
+          }
+        }
+      }
+    ]
+  }
+  dependsOn:[
+    cusSpokeVnet
+  ]
+}
+
+resource eusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
+  name: 'eusvm1'
+  location: 'eastus'
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_A2_v2'
+    }
+    osProfile: {
+      computerName: 'eusvm1'
+      adminUsername: 'AzureAdmin'
+      adminPassword: '#Pa55w0rd'
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'Canonical'
+        offer: 'UbuntuServer'
+        sku: '16.04-LTS'
+        version: 'latest'
+      }
+      osDisk: {
+        name: 'eusvm1-osdisk'
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          // id: resourceId('Microsoft.Network/networkInterfaces@2020-11-01','eusvm1nic')
+          id: eusvm1nic.id
+        }
+      ]
+    }
+    // diagnosticsProfile: {
+    //   bootDiagnostics: {
+    //     enabled: false
+    //     storageUri: 'storageUri'
+    //   }
+    // }
+  }
+  dependsOn:[
+    eusvm1nic
+  ]
+}
+
+resource cusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
+  name: 'cusvm1'
+  location: 'centralus'
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_A2_v2'
+    }
+    osProfile: {
+      computerName: 'cusvm1'
+      adminUsername: 'AzureAdmin'
+      adminPassword: '#Pa55w0rd'
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'Canonical'
+        offer: 'UbuntuServer'
+        sku: '16.04-LTS'
+        version: 'latest'
+      }
+      osDisk: {
+        name: 'cusvm1-osdisk'
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: cusvm1nic.id
+        }
+      ]
+    }
+    // diagnosticsProfile: {
+    //   bootDiagnostics: {
+    //     enabled: false
+    //     storageUri: 'storageUri'
+    //   }
+    // }
+  }
+  dependsOn:[
+    cusvm1nic
+  ]
+}
+
+// nsg
