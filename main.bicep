@@ -2,7 +2,7 @@ param eusHubVnetName string = 'eus-hub-vnet'
 param eusSpokeVnetName string = 'eus-spoke-vnet'
 param cusHubVnetName string = 'cus-hub-vnet'
 param cusSpokeVnetName string = 'cus-spoke-vnet'
-param baseTime string = utcNow('yyyymmddth')
+// param baseTime string = utcNow('yyyymmddth')
 
 
 resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
@@ -19,9 +19,6 @@ resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.0.0.0/24'
-          // routeTable:{
-          //   id: resourceId('Microsoft.Network/routeTables','eusafw-rt')
-          // }
         }
       }
       {
@@ -51,9 +48,6 @@ resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'Subnet-1'
         properties: {
           addressPrefix: '10.1.0.0/24'
-          // routeTable:{
-          //   id: resourceId('Microsoft.Network/routeTables','eusspoke-rt')
-          // }
         }
       }
       {
@@ -77,7 +71,7 @@ resource eusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', eusSpokeVnetName)
+      id: eusSpokeVnet.id
     }
   }
   dependsOn:[
@@ -94,11 +88,10 @@ resource eusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', eusHubVnetName)
+      id: eusHubVnet.id
     }
   }
   dependsOn:[
-    eusHubVnet
     eusSpokeVnet
   ]
 }
@@ -118,9 +111,6 @@ resource cusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.10.0.0/24'
-          // routeTable:{
-          //   id: resourceId('Microsoft.Network/routeTables','cusafw-rt')
-          // }
         }
       }
       {
@@ -150,9 +140,6 @@ resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'Subnet-1'
         properties: {
           addressPrefix: '10.11.0.0/24'
-          // routeTable:{
-          //   id: resourceId('Microsoft.Network/routeTables','cusspoke-rt')
-          // }
         }
       }
       {
@@ -177,12 +164,11 @@ resource cusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', cusSpokeVnetName)
+      id: cusSpokeVnet.id
     }
   }
   dependsOn:[
     cusHubVnet
-    cusSpokeVnet
   ]
 }
 
@@ -195,11 +181,10 @@ resource cusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', cusHubVnetName)
+      id: cusHubVnet.id
     }
   }
   dependsOn:[
-    cusHubVnet
     cusSpokeVnet
   ]
 }
@@ -214,12 +199,11 @@ resource eusHubTocusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', cusHubVnetName)
+      id: cusHubVnet.id
     }
   }
   dependsOn:[
     eusHubVnet
-    cusHubVnet
   ]
 }
 
@@ -232,11 +216,10 @@ resource cusHubToeusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
     allowGatewayTransit: true
     // useRemoteGateways: true
     remoteVirtualNetwork: {
-      id: resourceId(resourceGroup().name, 'Microsoft.Network/virtualNetworks', eusHubVnetName)
+      id: eusHubVnet.id
     }
   }
   dependsOn:[
-    eusHubVnet
     cusHubVnet
   ]
 }
@@ -327,14 +310,13 @@ resource eusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
 
           }
           publicIPAddress: {
-            id: resourceId('Microsoft.Network/publicIPAddresses','eusafw-pip')
+            id: eusafwpip.id
           }
         }
       }
     ]
   }
   dependsOn:[
-    eusafwpip
     eusHubVnet
   ]
 }
@@ -399,14 +381,13 @@ resource cusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
 
           }
           publicIPAddress: {
-            id: resourceId('Microsoft.Network/publicIPAddresses','cusafw-pip')
+            id: cusafwpip.id
           }
         }
       }
     ]
   }
   dependsOn:[
-    cusafwpip
     cusHubVnet
   ]
 }
@@ -571,7 +552,6 @@ resource eusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     networkProfile: {
       networkInterfaces: [
         {
-          // id: resourceId('Microsoft.Network/networkInterfaces@2020-11-01','eusvm1nic')
           id: eusvm1nic.id
         }
       ]
@@ -583,9 +563,6 @@ resource eusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     //   }
     // }
   }
-  dependsOn:[
-    eusvm1nic
-  ]
 }
 
 resource cusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
@@ -627,9 +604,47 @@ resource cusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     //   }
     // }
   }
-  dependsOn:[
-    cusvm1nic
-  ]
 }
 
-// nsg
+resource eusafwSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+  name: 'AzureFirewallSubnet'
+  parent: eusHubVnet
+  properties:{
+    addressPrefix: '10.0.0.0/24'
+    routeTable: {
+      id: eusafwrt.id
+    } 
+  } 
+}
+
+resource cusafwSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+  name: 'AzureFirewallSubnet'
+  parent: cusHubVnet
+  properties:{
+    addressPrefix: '10.10.0.0/24'
+    routeTable: {
+      id: cusafwrt.id
+    }
+  }
+}
+resource eusSpokeSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+  name: 'Subnet-1'
+  parent: eusSpokeVnet
+  properties:{
+    addressPrefix: '10.1.0.0/24'
+    routeTable: {
+      id: eusspokert.id
+    }
+  }
+}
+
+resource cusSpokeSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
+  name: 'Subnet-1'
+  parent: cusSpokeVnet
+  properties:{
+    addressPrefix: '10.11.0.0/24'
+    routeTable: {
+      id: cusspokert.id
+    }
+  }
+}
