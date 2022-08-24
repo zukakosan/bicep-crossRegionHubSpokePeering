@@ -1,12 +1,5 @@
-param eusHubVnetName string = 'eus-hub-vnet'
-param eusSpokeVnetName string = 'eus-spoke-vnet'
-param cusHubVnetName string = 'cus-hub-vnet'
-param cusSpokeVnetName string = 'cus-spoke-vnet'
-// param baseTime string = utcNow('yyyymmddth')
-
-
 resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: eusHubVnetName
+  name: 'eus-hub-vnet'
   location: 'eastus' 
   properties: {
     addressSpace: {
@@ -29,13 +22,10 @@ resource eusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
-  // dependsOn:[
-  //   eusafwrt
-  // ]
 }
 
 resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: eusSpokeVnetName
+  name: 'eus-spoke-vnet'
   location: 'eastus'
   properties: {
     addressSpace: {
@@ -58,13 +48,11 @@ resource eusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
-  // dependsOn:[
-  //   eusspokert
-  // ]
 }
 
 resource eusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: concat(eusHubVnetName,'/hubtospoke')
+  parent: eusHubVnet
+  name: 'hubtospoke'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -74,14 +62,11 @@ resource eusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
       id: eusSpokeVnet.id
     }
   }
-  dependsOn:[
-    eusHubVnet
-    eusSpokeVnet
-  ]
 }
 
 resource eusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: concat(eusSpokeVnetName,'/spoketohub')
+  parent: eusSpokeVnet
+  name: 'spoketohub'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -91,14 +76,11 @@ resource eusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
       id: eusHubVnet.id
     }
   }
-  dependsOn:[
-    eusSpokeVnet
-  ]
 }
 
 
 resource cusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: cusHubVnetName
+  name: 'cus-hub-vnet'
   location: 'centralus'
   properties: {
     addressSpace: {
@@ -121,13 +103,10 @@ resource cusHubVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
-  // dependsOn:[
-  //   cusafwrt
-  // ]
 }
 
 resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: cusSpokeVnetName
+  name: 'cus-spoke-vnet'
   location: 'centralus'
   properties: {
     addressSpace: {
@@ -150,14 +129,11 @@ resource cusSpokeVnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
       }
     ]
   }
-  // dependsOn:[
-  //   cusspokert
-  // ]
 }
 
 resource cusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: concat(cusHubVnetName,'/hubtospoke')
-  // name: '$(cusHubVnetName)/hubtospoke'
+  parent: cusHubVnet
+  name: 'hubtospoke'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -167,14 +143,11 @@ resource cusHubToSpokePeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
       id: cusSpokeVnet.id
     }
   }
-  dependsOn:[
-    cusHubVnet
-  ]
 }
 
 resource cusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  // name: '$(cusSpokeVnetName)/spoketohub'
-  name: concat(cusSpokeVnetName,'/spoketohub')
+  parent: cusSpokeVnet
+  name: 'spoketohub'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -184,15 +157,12 @@ resource cusSpokeToHubPeering 'Microsoft.Network/virtualNetworks/virtualNetworkP
       id: cusHubVnet.id
     }
   }
-  dependsOn:[
-    cusSpokeVnet
-  ]
 }
 
 // cus hub - eus hub peering
 resource eusHubTocusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  // name: '$(eusHubVnetName)/eushubtocushub'
-  name: concat(eusHubVnetName,'/eushubtocushub')
+  parent: eusHubVnet
+  name: 'eushubtocushub'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -202,14 +172,13 @@ resource eusHubTocusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
       id: cusHubVnet.id
     }
   }
-  dependsOn:[
-    eusHubVnet
-  ]
 }
 
 resource cusHubToeusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
   // name: 'cus-hub-vnet/cushubtoeushub'
-  name: concat(cusHubVnetName,'/cushubtoeushub')
+  parent: cusHubVnet
+  name: 'cushubtoeushub'
+  // name: concat(cusHubVnetName,'/cushubtoeushub')
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: true
@@ -219,9 +188,6 @@ resource cusHubToeusHub 'Microsoft.Network/virtualNetworks/virtualNetworkPeering
       id: eusHubVnet.id
     }
   }
-  dependsOn:[
-    cusHubVnet
-  ]
 }
 
 resource eusafwpip 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
@@ -306,7 +272,7 @@ resource eusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', eusHubVnetName, 'AzureFirewallSubnet')
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', eusHubVnet.name, 'AzureFirewallSubnet')
 
           }
           publicIPAddress: {
@@ -316,9 +282,6 @@ resource eusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
       }
     ]
   }
-  dependsOn:[
-    eusHubVnet
-  ]
 }
 
 
@@ -377,7 +340,7 @@ resource cusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
         name: 'ipconfig1'
         properties: {
           subnet: {
-            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', cusHubVnetName, 'AzureFirewallSubnet')
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', cusHubVnet.name, 'AzureFirewallSubnet')
 
           }
           publicIPAddress: {
@@ -387,9 +350,6 @@ resource cusafw 'Microsoft.Network/azureFirewalls@2020-11-01' = {
       }
     ]
   }
-  dependsOn:[
-    cusHubVnet
-  ]
 }
 
 resource eusafwrt 'Microsoft.Network/routeTables@2019-11-01' = {
@@ -492,15 +452,12 @@ resource eusvm1nic 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
-            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', eusSpokeVnetName, 'Subnet-1')
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', eusSpokeVnet.name, 'Subnet-1')
           }
         }
       }
     ]
   }
-  dependsOn:[
-    eusSpokeVnet
-  ]
 }
 
 resource cusvm1nic 'Microsoft.Network/networkInterfaces@2020-11-01' = {
@@ -513,15 +470,12 @@ resource cusvm1nic 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
-            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', cusSpokeVnetName, 'Subnet-1')
+            id: resourceId('Microsoft.Network/VirtualNetworks/subnets', cusSpokeVnet.name, 'Subnet-1')
           }
         }
       }
     ]
   }
-  dependsOn:[
-    cusSpokeVnet
-  ]
 }
 
 resource eusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
@@ -606,6 +560,8 @@ resource cusvm1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
+// UPDATE Subnet to apply RouteTable
+// RouteTable cannot be applied during creating VNet/Subnet because it depends on Azure Firewall that depends on VNet/Subnet
 resource eusafwSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' = {
   name: 'AzureFirewallSubnet'
   parent: eusHubVnet
